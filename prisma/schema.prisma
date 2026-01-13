@@ -1,0 +1,505 @@
+// Prisma Schema for Indeen - Islamic Mentorship Platform
+// Connects to Supabase PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  MENTOR
+  MENTEE
+  ADMIN
+  PARENT
+
+  @@map("user_role")
+}
+
+enum LearnerCategory {
+  CHILD
+  TEENAGER
+  ADULT
+
+  @@map("learner_category")
+}
+
+enum LearningContext {
+  NEW_MUSLIM
+  RETURNING_TO_FAITH
+  IMPROVING_SKILLS
+  PARENTAL_EDUCATION
+  PERSONAL_GROWTH
+  ACADEMIC
+  OTHER
+
+  @@map("learning_context")
+}
+
+enum LearningLevel {
+  NO_ARABIC
+  ARABIC_BEGINNER
+  CAN_READ_SLOWLY
+  CAN_READ_FLUENTLY
+  TAJWEED_INTERMEDIATE
+  TAJWEED_ADVANCED
+  HAFIZ_PARTIAL
+  HAFIZ_COMPLETE
+
+  @@map("learning_level")
+}
+
+enum SessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED_BY_MENTOR
+  CANCELLED_BY_MENTEE
+  NO_SHOW_MENTOR
+  NO_SHOW_MENTEE
+
+  @@map("session_status")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+
+  @@map("payment_status")
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  SUSPENDED
+
+  @@map("verification_status")
+}
+
+enum NotificationType {
+  SESSION_REMINDER
+  SESSION_CANCELLED
+  SESSION_COMPLETED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  NEW_REVIEW
+  ACCOUNT_VERIFICATION
+  MENTOR_APPLICATION
+  SYSTEM_ANNOUNCEMENT
+
+  @@map("notification_type")
+}
+
+enum LearningPace {
+  VERY_SLOW
+  SLOW
+  NORMAL
+  FAST
+  INTENSIVE
+
+  @@map("learning_pace")
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model User {
+  id                  String    @id @db.Uuid
+  email               String    @unique @db.VarChar(255)
+  role                UserRole
+  firstName           String?   @map("first_name") @db.VarChar(100)
+  lastName            String?   @map("last_name") @db.VarChar(100)
+  avatarUrl           String?   @map("avatar_url")
+  phone               String?   @db.VarChar(20)
+  gender              String?   @db.VarChar(20)
+  countryCode         String    @default("FR") @map("country_code") @db.Char(2)
+  timezone            String    @default("UTC") @db.VarChar(50)
+  locale              String    @default("fr") @db.VarChar(10)
+  preferredCurrency   String    @default("EUR") @map("preferred_currency") @db.Char(3)
+  emailVerified       Boolean   @default(false) @map("email_verified")
+  twoFactorEnabled    Boolean   @default(false) @map("two_factor_enabled")
+  lastLoginAt         DateTime? @map("last_login_at") @db.Timestamptz
+  lastActivityAt      DateTime? @map("last_activity_at") @db.Timestamptz
+  isActive            Boolean   @default(true) @map("is_active")
+  isBanned            Boolean   @default(false) @map("is_banned")
+  banReason           String?   @map("ban_reason")
+  notificationEmail   Boolean   @default(true) @map("notification_email")
+  notificationSms     Boolean   @default(false) @map("notification_sms")
+  metadata            Json      @default("{}")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  mentorProfile       MentorProfile?
+  menteeProfile       MenteeProfile?
+  childMenteeProfiles MenteeProfile[]  @relation("ParentRelation")
+  verifiedMentors     MentorProfile[]  @relation("VerifiedByRelation")
+  cancelledSessions   Session[]        @relation("CancelledByRelation")
+  paymentsMade        Payment[]
+  reviews             Review[]
+  notifications       Notification[]
+  sentMessages        Message[]        @relation("SenderRelation")
+  receivedMessages    Message[]        @relation("RecipientRelation")
+  auditLogs           AuditLog[]
+
+  @@index([email])
+  @@index([role])
+  @@index([countryCode])
+  @@map("users")
+}
+
+model MentorProfile {
+  id                        String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId                    String             @unique @map("user_id") @db.Uuid
+  bio                       String
+  headline                  String?            @db.VarChar(200)
+  videoIntroUrl             String?            @map("video_intro_url")
+  yearsExperience           Int                @default(0) @map("years_experience")
+  certifications            Json               @default("[]")
+  education                 String?
+  languages                 String[]           @db.VarChar(10)
+  nativeLanguage            String?            @map("native_language") @db.VarChar(10)
+  specialties               String[]           @db.VarChar(50)
+  teachesChildren           Boolean            @default(false) @map("teaches_children")
+  teachesTeenagers          Boolean            @default(false) @map("teaches_teenagers")
+  teachesAdults             Boolean            @default(true) @map("teaches_adults")
+  beginnerFriendly          Boolean            @default(true) @map("beginner_friendly")
+  patientWithSlowLearners   Boolean            @default(true) @map("patient_with_slow_learners")
+  experiencedWithNewMuslims Boolean            @default(false) @map("experienced_with_new_muslims")
+  acceptedLevels            LearningLevel[]    @map("accepted_levels")
+  specialNeedsSupport       Boolean            @default(false) @map("special_needs_support")
+  hourlyRate                Decimal?           @map("hourly_rate") @db.Decimal(10, 2)
+  currency                  String             @default("EUR") @db.Char(3)
+  freeTrialAvailable        Boolean            @default(false) @map("free_trial_available")
+  freeTrialDuration         Int                @default(30) @map("free_trial_duration")
+  freeSessionsOnly          Boolean            @default(false) @map("free_sessions_only")
+  maxStudentsPerWeek        Int                @default(20) @map("max_students_per_week")
+  minSessionDuration        Int                @default(30) @map("min_session_duration")
+  maxSessionDuration        Int                @default(120) @map("max_session_duration")
+  verificationStatus        VerificationStatus @default(PENDING) @map("verification_status")
+  verifiedAt                DateTime?          @map("verified_at") @db.Timestamptz
+  verifiedById              String?            @map("verified_by") @db.Uuid
+  isActive                  Boolean            @default(true) @map("is_active")
+  isFeatured                Boolean            @default(false) @map("is_featured")
+  isAcceptingStudents       Boolean            @default(true) @map("is_accepting_students")
+  totalSessions             Int                @default(0) @map("total_sessions")
+  completedSessions         Int                @default(0) @map("completed_sessions")
+  averageRating             Decimal            @default(0.00) @map("average_rating") @db.Decimal(3, 2)
+  totalReviews              Int                @default(0) @map("total_reviews")
+  profileSlug               String?            @unique @map("profile_slug") @db.VarChar(255)
+  metadata                  Json               @default("{}")
+  createdAt                 DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                 DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifiedBy     User?                @relation("VerifiedByRelation", fields: [verifiedById], references: [id])
+  availabilities MentorAvailability[]
+  sessions       Session[]
+  payments       Payment[]
+  reviews        Review[]
+
+  @@index([userId])
+  @@index([languages])
+  @@index([specialties])
+  @@index([isActive, verificationStatus])
+  @@index([averageRating(sort: Desc)])
+  @@map("mentor_profiles")
+}
+
+model MenteeProfile {
+  id                      String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId                  String           @unique @map("user_id") @db.Uuid
+  learnerCategory         LearnerCategory  @map("learner_category")
+  isMinor                 Boolean          @default(false) @map("is_minor")
+  yearOfBirth             Int?             @map("year_of_birth")
+  parentUserId            String?          @map("parent_user_id") @db.Uuid
+  parentalConsentGiven    Boolean          @default(false) @map("parental_consent_given")
+  parentalConsentDate     DateTime?        @map("parental_consent_date") @db.Timestamptz
+  currentLevel            LearningLevel    @default(NO_ARABIC) @map("current_level")
+  learningContext         LearningContext? @map("learning_context")
+  preferredLanguages      String[]         @default([]) @map("preferred_languages") @db.VarChar(10)
+  learningGoals           String[]         @default([]) @map("learning_goals") @db.VarChar(100)
+  learningPace            LearningPace     @default(NORMAL) @map("learning_pace")
+  preferredSessionDuration Int              @default(60) @map("preferred_session_duration")
+  hasSpecialNeeds         Boolean          @default(false) @map("has_special_needs")
+  specialNeedsDescription String?          @map("special_needs_description")
+  totalSessions           Int              @default(0) @map("total_sessions")
+  completedSessions       Int              @default(0) @map("completed_sessions")
+  totalHoursLearned       Decimal          @default(0.00) @map("total_hours_learned") @db.Decimal(10, 2)
+  metadata                Json             @default("{}")
+  createdAt               DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent           User?              @relation("ParentRelation", fields: [parentUserId], references: [id])
+  sessions         Session[]
+  progressTracking ProgressTracking[]
+
+  @@index([userId])
+  @@index([learnerCategory])
+  @@index([currentLevel])
+  @@map("mentee_profiles")
+}
+
+model MentorAvailability {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  mentorId     String    @map("mentor_id") @db.Uuid
+  dayOfWeek    Int       @map("day_of_week")
+  startTime    DateTime  @map("start_time") @db.Time
+  endTime      DateTime  @map("end_time") @db.Time
+  isRecurring  Boolean   @default(true) @map("is_recurring")
+  specificDate DateTime? @map("specific_date") @db.Date
+  isAvailable  Boolean   @default(true) @map("is_available")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  mentor MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+
+  @@index([mentorId])
+  @@map("mentor_availability")
+}
+
+model Session {
+  id                 String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  mentorProfileId    String        @map("mentor_profile_id") @db.Uuid
+  menteeProfileId    String        @map("mentee_profile_id") @db.Uuid
+  scheduledAt        DateTime      @map("scheduled_at") @db.Timestamptz
+  scheduledEndAt     DateTime      @map("scheduled_end_at") @db.Timestamptz
+  durationMinutes    Int           @default(60) @map("duration_minutes")
+  timezone           String        @db.VarChar(50)
+  status             SessionStatus @default(SCHEDULED)
+  cancelledAt        DateTime?     @map("cancelled_at") @db.Timestamptz
+  cancelledById      String?       @map("cancelled_by") @db.Uuid
+  cancellationReason String?       @map("cancellation_reason")
+  meetingUrl         String?       @map("meeting_url")
+  meetingProvider    String?       @map("meeting_provider") @db.VarChar(50)
+  meetingId          String?       @map("meeting_id") @db.VarChar(255)
+  recordingUrl       String?       @map("recording_url")
+  lessonPlan         String?       @map("lesson_plan")
+  topicsCovered      String[]      @default([]) @map("topics_covered") @db.VarChar(100)
+  mentorNotes        String?       @map("mentor_notes")
+  menteeNotes        String?       @map("mentee_notes")
+  surahStudied       String?       @map("surah_studied") @db.VarChar(100)
+  surahNumber        Int?          @map("surah_number")
+  ayatRange          String?       @map("ayat_range") @db.VarChar(50)
+  masteryLevel       Int?          @map("mastery_level")
+  startedAt          DateTime?     @map("started_at") @db.Timestamptz
+  completedAt        DateTime?     @map("completed_at") @db.Timestamptz
+  metadata           Json          @default("{}")
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  mentorProfile    MentorProfile      @relation(fields: [mentorProfileId], references: [id])
+  menteeProfile    MenteeProfile      @relation(fields: [menteeProfileId], references: [id])
+  cancelledBy      User?              @relation("CancelledByRelation", fields: [cancelledById], references: [id])
+  payment          Payment?
+  review           Review?
+  progressTracking ProgressTracking[]
+  messages         Message[]
+
+  @@index([mentorProfileId, scheduledAt(sort: Desc)])
+  @@index([menteeProfileId, scheduledAt(sort: Desc)])
+  @@index([status])
+  @@map("sessions")
+}
+
+model Payment {
+  id                     String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  sessionId              String        @unique @map("session_id") @db.Uuid
+  payerUserId            String        @map("payer_user_id") @db.Uuid
+  payeeMentorId          String        @map("payee_mentor_id") @db.Uuid
+  amountPaid             Decimal       @map("amount_paid") @db.Decimal(10, 2)
+  currencyPaid           String        @map("currency_paid") @db.Char(3)
+  amountToMentor         Decimal       @map("amount_to_mentor") @db.Decimal(10, 2)
+  currencyToMentor       String        @map("currency_to_mentor") @db.Char(3)
+  platformFee            Decimal       @default(0.00) @map("platform_fee") @db.Decimal(10, 2)
+  platformFeePercentage  Decimal       @default(15.00) @map("platform_fee_percentage") @db.Decimal(5, 2)
+  paymentProcessorFee    Decimal       @default(0.00) @map("payment_processor_fee") @db.Decimal(10, 2)
+  conversionFee          Decimal       @default(0.00) @map("conversion_fee") @db.Decimal(10, 2)
+  exchangeRate           Decimal       @default(1.000000) @map("exchange_rate") @db.Decimal(10, 6)
+  status                 PaymentStatus @default(PENDING)
+  paymentMethod          String?       @map("payment_method") @db.VarChar(50)
+  stripePaymentIntentId  String?       @unique @map("stripe_payment_intent_id") @db.VarChar(255)
+  stripeChargeId         String?       @map("stripe_charge_id") @db.VarChar(255)
+  refundedAmount         Decimal       @default(0.00) @map("refunded_amount") @db.Decimal(10, 2)
+  invoiceNumber          String?       @unique @map("invoice_number") @db.VarChar(100)
+  paidAt                 DateTime?     @map("paid_at") @db.Timestamptz
+  createdAt              DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  session      Session       @relation(fields: [sessionId], references: [id])
+  payer        User          @relation(fields: [payerUserId], references: [id])
+  payeeMentor  MentorProfile @relation(fields: [payeeMentorId], references: [id])
+
+  @@index([sessionId])
+  @@index([payerUserId])
+  @@index([status])
+  @@map("payments")
+}
+
+model ProgressTracking {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  menteeProfileId String    @map("mentee_profile_id") @db.Uuid
+  sessionId       String?   @map("session_id") @db.Uuid
+  category        String    @db.VarChar(50)
+  subcategory     String?   @db.VarChar(100)
+  surahNumber     Int?      @map("surah_number")
+  surahName       String?   @map("surah_name") @db.VarChar(100)
+  ayahFrom        Int?      @map("ayah_from")
+  ayahTo          Int?      @map("ayah_to")
+  masteryLevel    Int       @default(0) @map("mastery_level")
+  revisionCount   Int       @default(0) @map("revision_count")
+  lastReviewedAt  DateTime? @map("last_reviewed_at") @db.Timestamptz
+  notes           String?
+  isMastered      Boolean   @default(false) @map("is_mastered")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  menteeProfile MenteeProfile @relation(fields: [menteeProfileId], references: [id], onDelete: Cascade)
+  session       Session?      @relation(fields: [sessionId], references: [id])
+
+  @@index([menteeProfileId])
+  @@index([category])
+  @@map("progress_tracking")
+}
+
+model Review {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  mentorProfileId   String   @map("mentor_profile_id") @db.Uuid
+  sessionId         String   @unique @map("session_id") @db.Uuid
+  reviewerUserId    String   @map("reviewer_user_id") @db.Uuid
+  overallRating     Int      @map("overall_rating")
+  pedagogyRating    Int?     @map("pedagogy_rating")
+  punctualityRating Int?     @map("punctuality_rating")
+  patienceRating    Int?     @map("patience_rating")
+  title             String?  @db.VarChar(200)
+  comment           String?
+  wouldRecommend    Boolean? @map("would_recommend")
+  isVerified        Boolean  @default(false) @map("is_verified")
+  isVisible         Boolean  @default(true) @map("is_visible")
+  mentorResponse    String?  @map("mentor_response")
+  mentorRespondedAt DateTime? @map("mentor_responded_at") @db.Timestamptz
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  mentorProfile MentorProfile @relation(fields: [mentorProfileId], references: [id], onDelete: Cascade)
+  session       Session       @relation(fields: [sessionId], references: [id])
+  reviewer      User          @relation(fields: [reviewerUserId], references: [id])
+
+  @@index([mentorProfileId, createdAt(sort: Desc)])
+  @@map("reviews")
+}
+
+model Notification {
+  id                String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId            String           @map("user_id") @db.Uuid
+  type              NotificationType
+  priority          String           @default("NORMAL") @db.VarChar(20)
+  title             String           @db.VarChar(200)
+  message           String
+  relatedEntityType String?          @map("related_entity_type") @db.VarChar(50)
+  relatedEntityId   String?          @map("related_entity_id") @db.Uuid
+  actionUrl         String?          @map("action_url")
+  isRead            Boolean          @default(false) @map("is_read")
+  readAt            DateTime?        @map("read_at") @db.Timestamptz
+  emailSent         Boolean          @default(false) @map("email_sent")
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model Message {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  senderUserId    String    @map("sender_user_id") @db.Uuid
+  recipientUserId String    @map("recipient_user_id") @db.Uuid
+  sessionId       String?   @map("session_id") @db.Uuid
+  messageText     String    @map("message_text")
+  isRead          Boolean   @default(false) @map("is_read")
+  readAt          DateTime? @map("read_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  sender    User     @relation("SenderRelation", fields: [senderUserId], references: [id])
+  recipient User     @relation("RecipientRelation", fields: [recipientUserId], references: [id])
+  session   Session? @relation(fields: [sessionId], references: [id])
+
+  @@index([recipientUserId, createdAt(sort: Desc)])
+  @@map("messages")
+}
+
+model ExchangeRate {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  fromCurrency String    @map("from_currency") @db.Char(3)
+  toCurrency   String    @map("to_currency") @db.Char(3)
+  rate         Decimal   @db.Decimal(12, 6)
+  provider     String    @default("openexchangerates") @db.VarChar(50)
+  validFrom    DateTime  @default(now()) @map("valid_from") @db.Timestamptz
+  validUntil   DateTime? @map("valid_until") @db.Timestamptz
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([fromCurrency, toCurrency])
+  @@map("exchange_rates")
+}
+
+model CountryConfig {
+  id                       String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  countryCode              String   @unique @map("country_code") @db.Char(2)
+  countryName              String   @map("country_name") @db.VarChar(100)
+  countryNameAr            String?  @map("country_name_ar") @db.VarChar(100)
+  countryNameEn            String?  @map("country_name_en") @db.VarChar(100)
+  defaultCurrency          String   @map("default_currency") @db.Char(3)
+  supportedCurrencies      String[] @default([]) @map("supported_currencies") @db.Char(3)
+  timezones                String[] @db.VarChar(50)
+  defaultLocale            String   @default("en") @map("default_locale") @db.VarChar(10)
+  paymentMethods           String[] @default(["stripe"]) @map("payment_methods") @db.VarChar(50)
+  minAgeConsent            Int      @default(13) @map("min_age_consent")
+  requiresParentalConsent  Boolean  @default(true) @map("requires_parental_consent")
+  isActive                 Boolean  @default(true) @map("is_active")
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("country_configs")
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String   @map("entity_id") @db.Uuid
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address") @db.Inet
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
