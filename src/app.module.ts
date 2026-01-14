@@ -8,7 +8,7 @@ import { SupabaseModule } from './supabase';
 import { AuthModule } from './auth';
 import { UsersModule } from './users';
 import { GlobalExceptionFilter } from './common/filters';
-import { JwtAuthGuard, RolesGuard } from './common/guards';
+import { JwtAuthGuard, RolesGuard, IsActiveGuard } from './common/guards';
 import configuration from './config/configuration';
 import { validate } from './config/env.validation';
 
@@ -38,6 +38,10 @@ import { validate } from './config/env.validation';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: IsActiveGuard,
     },
   ],
 })
