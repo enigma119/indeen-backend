@@ -4,6 +4,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma';
+import { SupabaseModule } from './supabase';
 import { AuthModule } from './auth';
 import { GlobalExceptionFilter } from './common/filters';
 import { JwtAuthGuard, RolesGuard } from './common/guards';
@@ -18,6 +19,7 @@ import { validate } from './config/env.validation';
       validate,
     }),
     PrismaModule,
+    SupabaseModule,
     AuthModule,
   ],
   controllers: [AppController],
