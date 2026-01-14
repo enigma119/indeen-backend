@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma';
 import { SupabaseModule } from './supabase';
 import { AuthModule } from './auth';
+import { UsersModule } from './users';
 import { GlobalExceptionFilter } from './common/filters';
 import { JwtAuthGuard, RolesGuard } from './common/guards';
 import configuration from './config/configuration';
@@ -21,6 +22,7 @@ import { validate } from './config/env.validation';
     PrismaModule,
     SupabaseModule,
     AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [
