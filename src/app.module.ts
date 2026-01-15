@@ -7,6 +7,10 @@ import { PrismaModule } from './prisma';
 import { SupabaseModule } from './supabase';
 import { AuthModule } from './auth';
 import { UsersModule } from './users';
+import { MentorsModule } from './mentors';
+import { MenteesModule } from './mentees';
+import { AvailabilityModule } from './availability';
+import { MatchingModule } from './matching';
 import { GlobalExceptionFilter } from './common/filters';
 import { JwtAuthGuard, RolesGuard, IsActiveGuard } from './common/guards';
 import configuration from './config/configuration';
@@ -23,6 +27,10 @@ import { validate } from './config/env.validation';
     SupabaseModule,
     AuthModule,
     UsersModule,
+    MentorsModule,
+    MenteesModule,
+    AvailabilityModule,
+    MatchingModule,
   ],
   controllers: [AppController],
   providers: [
