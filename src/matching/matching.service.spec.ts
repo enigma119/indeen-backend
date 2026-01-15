@@ -253,8 +253,14 @@ describe('MatchingService', () => {
       const poorMatchMentor = {
         ...mockMentorProfile,
         teachesAdults: false,
+        teachesChildren: false,
+        teachesTeenagers: false,
         acceptedLevels: ['HAFIZ_COMPLETE'],
         languages: ['zh'],
+        experiencedWithNewMuslims: false,
+        beginnerFriendly: false,
+        averageRating: 2.0,
+        totalReviews: 10,
       };
 
       mockPrismaService.menteeProfile.findUnique.mockResolvedValue(mockMenteeProfile);
@@ -262,6 +268,7 @@ describe('MatchingService', () => {
 
       const result = await service.findCompatibleMentors(mockMenteeProfile.id, {});
 
+      // With no category match, no level match, no language match, poor rating - score should be < 20
       expect(result.mentors.length).toBe(0);
     });
   });
