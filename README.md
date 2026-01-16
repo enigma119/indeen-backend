@@ -1,98 +1,209 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Indeen - Islamic Mentorship Platform
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend API for Indeen, an Islamic mentorship platform connecting Quran teachers (mentors) with students (mentees).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
 
-## Description
+- **Framework**: NestJS 11
+- **Database**: PostgreSQL (Supabase)
+- **ORM**: Prisma 7
+- **Authentication**: Supabase Auth + JWT
+- **Documentation**: Swagger/OpenAPI
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Features
 
-## Project setup
+### Authentication & Users
+- Supabase JWT token validation
+- Role-based access control (MENTOR, MENTEE, PARENT, ADMIN)
+- User profile management
+- Account activation/deactivation
 
-```bash
-$ npm install
-```
+### Mentors
+- Complete mentor profile CRUD
+- Advanced search with filters (languages, specialties, price, rating, etc.)
+- Verification status management (PENDING, APPROVED, REJECTED)
+- Mentor statistics (sessions, ratings, students)
 
-## Compile and run the project
+### Mentees
+- Mentee profile management
+- Learning progress tracking
+- Parental consent flow for minors
+- Learning goals and preferences
 
-```bash
-# development
-$ npm run start
+### Availability
+- Mentor availability slots management
+- Weekly recurring availability patterns
+- Available slots calculation for booking
+- Conflict detection with existing sessions
 
-# watch mode
-$ npm run start:dev
+### Matching
+- Compatibility algorithm (0-100 score)
+- Weighted scoring system:
+  - Learner Category: 100 pts (CRITICAL)
+  - Accepted Level: 80 pts (HIGH)
+  - Languages: 80 pts (HIGH)
+  - Learning Context: 50 pts (MEDIUM)
+  - Budget: 40 pts (MEDIUM)
+  - Timezone: 30 pts (LOW)
+  - Rating: 20 pts (LOW)
+- Mentor recommendations for mentees
 
-# production mode
-$ npm run start:prod
-```
+## Project Setup
 
-## Run tests
+### Prerequisites
 
-```bash
-# unit tests
-$ npm run test
+- Node.js 18+
+- PostgreSQL database (or Supabase account)
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Installation
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm install
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Environment Variables
 
-## Resources
+Copy `.env.example` to `.env` and configure:
 
-Check out a few resources that may come in handy when working with NestJS:
+```env
+# Environment
+NODE_ENV=development
+PORT=3000
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Database
+DATABASE_URL="postgresql://user:password@host:5432/database"
 
-## Support
+# JWT
+JWT_SECRET=your-secret-key
+JWT_EXPIRES_IN=7d
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
-## Stay in touch
+### Database Setup
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Run migrations (if using Prisma migrations)
+npx prisma migrate dev
+```
+
+## Running the Application
+
+```bash
+# Development
+npm run start:dev
+
+# Production
+npm run build
+npm run start:prod
+```
+
+## API Documentation
+
+Swagger documentation available at `/api/docs` when running the application.
+
+### Main Endpoints
+
+#### Authentication
+- `POST /auth/login` - Login with Supabase token
+- `POST /auth/register` - Register new user
+- `GET /auth/me` - Get current user
+
+#### Users
+- `GET /users/me` - Get my profile
+- `PATCH /users/me` - Update my profile
+- `DELETE /users/me` - Deactivate account
+
+#### Mentors
+- `POST /mentors` - Create mentor profile
+- `GET /mentors` - List mentors (public)
+- `GET /mentors/search` - Advanced search
+- `GET /mentors/:id` - Get mentor details
+- `GET /mentors/me` - Get my mentor profile
+- `PATCH /mentors/me` - Update my mentor profile
+- `GET /mentors/:id/stats` - Get mentor statistics
+
+#### Mentees
+- `POST /mentees` - Create mentee profile
+- `GET /mentees/me` - Get my mentee profile
+- `PATCH /mentees/me` - Update my mentee profile
+- `GET /mentees/:id/consent` - Check parental consent
+- `POST /mentees/:id/consent` - Grant parental consent
+
+#### Availability
+- `POST /mentors/:id/availability` - Add availability slot
+- `GET /mentors/:id/availability` - List availability
+- `GET /mentors/:id/available-slots` - Get free slots for date
+- `POST /mentors/:id/availability/bulk` - Bulk create weekly pattern
+- `PATCH /availability/:id` - Update slot
+- `DELETE /availability/:id` - Delete slot
+
+#### Matching
+- `POST /matching/find-mentors` - Find compatible mentors
+- `GET /matching/recommendations/:menteeId` - Get recommendations
+- `GET /matching/compatibility/:mentorId/:menteeId` - Get compatibility score
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:cov
+
+# Run specific test file
+npm test -- --testPathPatterns="mentors"
+```
+
+## Project Structure
+
+```
+src/
+├── auth/                 # Authentication module
+├── availability/         # Mentor availability management
+├── common/
+│   ├── decorators/       # Custom decorators (@Public, @Roles, etc.)
+│   ├── filters/          # Exception filters
+│   └── guards/           # Auth guards (JWT, Roles, IsActive)
+├── config/               # Configuration and validation
+├── matching/             # Mentor-mentee matching algorithm
+├── mentees/              # Mentee profiles module
+├── mentors/              # Mentor profiles module
+├── prisma/               # Prisma service
+├── supabase/             # Supabase service
+└── users/                # User management module
+```
+
+## Business Rules
+
+### Mentors
+- One mentor profile per MENTOR user
+- `verification_status = PENDING` by default
+- Only APPROVED mentors visible publicly
+- `hourly_rate` required unless `free_sessions_only = true`
+
+### Mentees
+- One mentee profile per MENTEE user
+- `parent_user_id` required for minors (CHILD/TEENAGER)
+- Parental consent required before booking sessions
+
+### Availability
+- No overlapping availability slots
+- `start_time < end_time` required
+- `day_of_week` between 0 (Sunday) and 6 (Saturday)
+
+### Matching
+- Only suggest APPROVED mentors
+- Respect `is_accepting_students` flag
+- Filter out very poor matches (score < 20)
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT
