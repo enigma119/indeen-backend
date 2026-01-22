@@ -13,7 +13,7 @@ import {
   ConnectAccountStatusDto,
 } from './dto';
 import { CurrentUser, Roles } from '../common/decorators';
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @ApiTags('Stripe Connect')
 @ApiBearerAuth()

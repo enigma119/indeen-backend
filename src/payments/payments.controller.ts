@@ -11,7 +11,7 @@ import {
   DefaultValuePipe,
   StreamableFile,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -31,7 +31,7 @@ import {
   PaymentHistoryResponseDto,
 } from './dto';
 import { CurrentUser, Roles } from '../common/decorators';
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @ApiTags('Payments')
 @ApiBearerAuth()

@@ -42,7 +42,7 @@ export class StripeService {
 
     if (secretKey && secretKey !== 'sk_test_your-stripe-secret-key') {
       this.stripe = new Stripe(secretKey, {
-        apiVersion: '2024-12-18.acacia',
+        apiVersion: '2025-12-15.clover',
         typescript: true,
       });
       this.isConfigured = true;

@@ -16,7 +16,6 @@ import {
   PaymentHistoryResponseDto,
 } from './dto';
 import type { Payment, PaymentStatus, Session } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
 
 const PLATFORM_FEE_PERCENTAGE = 15;
 

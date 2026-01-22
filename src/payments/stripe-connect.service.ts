@@ -48,8 +48,15 @@ export class StripeConnectService {
     // 2. Check if already has Connect account
     const existingAccountId = (mentor.metadata as any)?.stripeConnectAccountId;
     if (existingAccountId) {
-      // Return existing account status
-      return this.getAccountStatus(mentorUserId);
+      // Return existing account status as ConnectAccountResponseDto
+      const status = await this.getAccountStatus(mentorUserId);
+      return {
+        accountId: status.accountId,
+        isOnboarded: status.isReady,
+        chargesEnabled: status.chargesEnabled,
+        payoutsEnabled: status.payoutsEnabled,
+        onboardingUrl: status.isReady ? undefined : (await this.createAccountLink(mentorUserId)).url,
+      };
     }
 
     // 3. Determine country
