@@ -5,10 +5,13 @@ import {
   Body,
   Param,
   Query,
+  Res,
   ParseUUIDPipe,
   ParseIntPipe,
   DefaultValuePipe,
+  StreamableFile,
 } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -17,6 +20,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
+import { InvoiceService } from './invoice.service';
 import {
   CreatePaymentIntentDto,
   ConfirmPaymentDto,
@@ -33,7 +37,10 @@ import { User } from '@prisma/client';
 @ApiBearerAuth()
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(
+    private readonly paymentsService: PaymentsService,
+    private readonly invoiceService: InvoiceService,
+  ) {}
 
   @Post('create-intent')
   @Roles('MENTEE')
@@ -150,5 +157,35 @@ export class PaymentsController {
     @CurrentUser() user: User,
   ): Promise<RefundResponseDto> {
     return this.paymentsService.processRefund(sessionId, dto, user.id);
+  }
+
+  @Get(':paymentId/invoice')
+  @ApiOperation({
+    summary: 'Download invoice PDF',
+    description: 'Download a PDF invoice for a completed payment.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Invoice PDF downloaded',
+    content: { 'application/pdf': {} },
+  })
+  @ApiResponse({ status: 403, description: 'Not authorized to access this invoice' })
+  @ApiResponse({ status: 404, description: 'Payment not found or not completed' })
+  async downloadInvoice(
+    @Param('paymentId', ParseUUIDPipe) paymentId: string,
+    @CurrentUser() user: User,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const { buffer, filename } = await this.invoiceService.generateInvoice(
+      paymentId,
+      user.id,
+    );
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+
+    return new StreamableFile(buffer);
   }
 }
