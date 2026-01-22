@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import * as bodyParser from 'body-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -9,7 +10,11 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+    rawBody: true,
   });
+
+  // Raw body parsing for Stripe webhooks (must be before other body parsers)
+  app.use('/api/webhooks/stripe', bodyParser.raw({ type: 'application/json' }));
 
   const configService = app.get(ConfigService);
 
