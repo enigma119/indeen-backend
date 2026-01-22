@@ -12,6 +12,7 @@ import { MenteesModule } from './mentees';
 import { AvailabilityModule } from './availability';
 import { MatchingModule } from './matching';
 import { SessionsModule } from './sessions';
+import { PaymentsModule } from './payments';
 import { GlobalExceptionFilter } from './common/filters';
 import { JwtAuthGuard, RolesGuard, IsActiveGuard } from './common/guards';
 import configuration from './config/configuration';
@@ -33,6 +34,7 @@ import { validate } from './config/env.validation';
     AvailabilityModule,
     MatchingModule,
     SessionsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [
