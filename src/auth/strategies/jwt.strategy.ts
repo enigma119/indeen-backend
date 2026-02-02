@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Strategy } from 'passport-custom';
+import { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 import type { User } from '@prisma/client';
@@ -15,47 +15,45 @@ export interface JwtPayload {
   exp?: number;
 }
 
+/**
+ * JWT Strategy that validates tokens directly with Supabase
+ * This avoids the need to sync JWT secrets between Supabase and the backend
+ */
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   private readonly logger = new Logger(JwtStrategy.name);
 
   constructor(
-    private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly supabaseService: SupabaseService,
   ) {
-    const jwtSecret = configService.get<string>('JWT_SECRET');
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET is not defined');
-    }
-
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey: jwtSecret,
-      passReqToCallback: true,
-    });
+    super();
   }
 
-  async validate(request: { headers: Record<string, string> }, payload: JwtPayload): Promise<User> {
+  async validate(request: Request): Promise<User> {
     const authHeader = request.headers['authorization'];
-    const token = authHeader?.replace('Bearer ', '');
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedException('No token provided');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
 
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
 
     try {
-      // Validate token with Supabase
+      // Validate token directly with Supabase (handles signature verification)
       const supabaseUser = await this.supabaseService.verifyToken(token);
 
-      if (!supabaseUser || supabaseUser.id !== payload.sub) {
+      if (!supabaseUser) {
         throw new UnauthorizedException('Token validation failed');
       }
 
       // Get user from database
       const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
+        where: { id: supabaseUser.id },
         include: {
           mentorProfile: true,
           menteeProfile: true,
@@ -63,7 +61,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       });
 
       if (!user) {
-        this.logger.warn(`User not found in database: ${payload.sub}`);
+        this.logger.warn(`User not found in database: ${supabaseUser.id}`);
         throw new UnauthorizedException('User not found');
       }
 
@@ -77,10 +75,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('User account is banned');
       }
 
-      // Update last activity
-      await this.prisma.user.update({
+      // Update last activity (non-blocking)
+      this.prisma.user.update({
         where: { id: user.id },
         data: { lastActivityAt: new Date() },
+      }).catch((err) => {
+        this.logger.warn(`Failed to update last activity: ${err.message}`);
       });
 
       return user;
